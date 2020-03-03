@@ -13,7 +13,8 @@ provider "ovirt" {
 
 resource "ovirt_image_transfer" "centos_transfer" {
   alias             = "centos7"
-  source_url        = "http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+#  source_url        = "http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud.qcow2"
+  source_url        = "http://ostorage.example.com/CentOS-7-x86_64-GenericCloud.qcow2"
   storage_domain_id = "d1a97267-e32a-419b-851e-4c20ae67d264"
   sparse            = true
 }
@@ -26,10 +27,18 @@ resource "ovirt_vm" "tmpvm" {
     interface = "virtio_scsi"
   }
 }
-
+resource "ovirt_vnic" "nic1" {
+   name = "nic1"
+   vm_id = ovirt_vm.tmpvm.id
+   vnic_profile_id = "0000000a-000a-000a-000a-000000000398"
+}
 resource "ovirt_template" "centos7" {
   name       = "template-for-${ovirt_image_transfer.centos_transfer.alias}"
   cluster_id = ovirt_vm.tmpvm.cluster_id
   // create from vm
   vm_id = ovirt_vm.tmpvm.id
+  depends_on = [ 
+     ovirt_vm.tmpvm, 
+     ovirt_vnic.nic1,
+  ]
 }
